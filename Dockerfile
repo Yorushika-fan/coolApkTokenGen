@@ -1,13 +1,21 @@
+# 构建阶段
+FROM maven:3.9-eclipse-temurin-21 AS builder
+
+WORKDIR /build
+COPY pom.xml .
+COPY src ./src
+
+RUN mvn clean package -DskipTests -q
+
+# 运行阶段
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-# 复制 jar 和 so 文件
-COPY target/unidbg-coolapk-1.0-SNAPSHOT.jar app.jar
+# 从构建阶段复制 jar
+COPY --from=builder /build/target/unidbg-coolapk-1.0-SNAPSHOT.jar app.jar
 COPY src/main/java/com/coolapk/libauth.so libauth.so
 
-# 暴露端口
 EXPOSE 8080
 
-# 启动服务
 CMD ["java", "-Xmx512m", "-jar", "app.jar", "server", "8080"]
